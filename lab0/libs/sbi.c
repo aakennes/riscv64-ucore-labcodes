@@ -20,8 +20,10 @@ uint64_t sbi_call(uint64_t sbi_type, uint64_t arg0, uint64_t arg1, uint64_t arg2
         "mv x10, %[arg0]\n"
         "mv x11, %[arg1]\n"
         "mv x12, %[arg2]\n"
-        "ecall\n"
+        "ecall\n" //参数放好之后，通过ecall, 交给OpenSBI来执行
         "mv %[ret_val], x10"
+        //OpenSBI按照riscv的calling convention,把返回值放到x10寄存器里
+        //我们还需要自己通过内联汇编把返回值拿到我们的变量里
         : [ret_val] "=r" (ret_val)
         : [sbi_type] "r" (sbi_type), [arg0] "r" (arg0), [arg1] "r" (arg1), [arg2] "r" (arg2)
         : "memory"
