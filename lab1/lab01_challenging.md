@@ -35,4 +35,33 @@
 - `stval`寄存器保存了异常的附加信息（地址异常的地址、非法指令异常的指令地址等）
 
 这两个寄存器的主要作用是处理异常程序时提供重要的信息，当异常已经被处理完毕，显然不需要恢复这两个寄存器的内容了。
-## 
+
+## Challenge3
+```
+编程完善在触发一条非法指令异常 mret和，在 kern/trap/trap.c的异常处理函数中捕获，并对其进行处理，简单输出异常类型和异常指令触发地址，即“Illegal instruction caught at 0x(地址)”，“ebreak caught at 0x（地址）”与“Exception type:Illegal instruction"，“Exception type: breakpoint”。
+```
+
+```cpp
+case CAUSE_ILLEGAL_INSTRUCTION:
+             // 非法指令异常处理
+             /* LAB1 CHALLENGE3   YOUR CODE :  */
+            /*(1)输出指令异常类型（ Illegal instruction）
+             *(2)输出异常指令地址
+             *(3)更新 tf->epc寄存器
+            */
+            cprintf("Exception type:Illegal instruction\n");
+            cprintf("Illegal instruction caught at 0x%x\n",tf->epc);
+            tf->epc+=4;//指令长度4字节
+            break;
+        case CAUSE_BREAKPOINT:
+            //断点异常处理
+            /* LAB1 CHALLLENGE3   YOUR CODE :  */
+            /*(1)输出指令异常类型（ breakpoint）
+             *(2)输出异常指令地址
+             *(3)更新 tf->epc寄存器
+            */
+            cprintf("Exception type: breakpoint\n");
+            cprintf("ebreak caught at 0x%x\n",tf->epc);
+            tf->epc+=2;//断点长度2字节
+            break;
+```
