@@ -99,11 +99,14 @@
     .endm
 
     .globl __alltraps
-.align(2)
+.align(2) # 中断入口点 __alltraps必须四字节对齐
 __alltraps:
     SAVE_ALL
 
     move  a0, sp
+    # 将栈顶参数传入trap中，栈顶参数即为所有寄存器的值
+    # 按照RISCV calling convention, a0寄存器传递参数给接下来调用的函数trap。
+    # trap是trap.c里面的一个C语言函数，也就是我们的中断处理程序
     jal trap
     # sp should be the same as before "jal trap"
 
