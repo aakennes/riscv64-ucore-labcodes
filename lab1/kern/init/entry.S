@@ -11,6 +11,7 @@ kern_entry:
 # tail: 即tail call，是RISC-V的一个伪指令
 # 效果：类似函数调用，但是和call相比有所不同
 # 目的：直接执行跳转kern_init标签，且不建立新的栈帧以优化结构提高效率
+# kern_init的函数作用参见init.c
     tail kern_init
 
 .section .data
