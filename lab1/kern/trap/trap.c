@@ -162,6 +162,7 @@ void exception_handler(struct trapframe *tf) {
              *(2)输出异常指令地址
              *(3)更新 tf->epc寄存器
             */
+            
             break;
         case CAUSE_BREAKPOINT:
             //断点异常处理
