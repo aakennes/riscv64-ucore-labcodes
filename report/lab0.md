@@ -4,7 +4,7 @@
 
 * 为了熟悉使用qemu和gdb进行调试工作,使用gdb调试QEMU模拟的RISC-V计算机加电开始运行到执行应用程序的第一条指令（即跳转到0x80200000）这个阶段的执行过程，说明RISC-V硬件加电后的几条指令在哪里？完成了哪些功能？要求在报告中简要写出练习过程和回答。
 
-1. 上电后，`pc`寄存器在 $0x1000$ 的位置
+1. 上电后，`pc`寄存器在 $0x1000$ 的位置，使用指令```x/10i $pc```查看上电后即将执行的指令
 
 ```riscv
    0x1000:      auipc   t0,0x0
@@ -19,6 +19,52 @@
    0x101c:      unimp
 ```
 
+* 逐行运行汇编后，`pc`寄存器跳转到 $0x80000000$
+
+2. 查看 $0x80000000$ 位置的信息，同样使用```x/20i```查看 `pc` 寄存器附近的指令，这里已经进入了内核操作
+
+```riscv
+   0x80000000:  csrr    a6,mhartid
+   ; 从mhartid寄存器读取当前硬件线程ID
+   0x80000004:  bgtz    a6,0x80000108
+   ; 线程ID大于零则跳转到0x80000108，当热启动时线程ID大于零
+   0x80000008:  auipc   t0,0x0
+   0x8000000c:  addi    t0,t0,1032
+   0x80000010:  auipc   t1,0x0
+   0x80000014:  addi    t1,t1,-16
+   0x80000018:  sd      t1,0(t0)
+   0x8000001c:  auipc   t0,0x0
+   0x80000020:  addi    t0,t0,1020
+   0x80000024:  ld      t0,0(t0)
+   0x80000028:  auipc   t1,0x0
+   0x8000002c:  addi    t1,t1,1016
+   0x80000030:  ld      t1,0(t1)
+   0x80000034:  auipc   t2,0x0
+   0x80000038:  addi    t2,t2,988
+   0x8000003c:  ld      t2,0(t2)
+   0x80000040:  sub     t3,t1,t0
+   0x80000044:  add     t3,t3,t2
+   0x80000046:  beq     t0,t2,0x8000014e
+   0x8000004a:  auipc   t4,0x0
+```
+
+* 这段汇编的作用有 : 判断冷热启动； 初始化栈帧和数据结构；
+
+3. 在 $0x80200000$ 部分正式进入 `kern_entry`
+
+```riscv
+   0x80200000 <kern_entry>:     auipc   sp,0x3 ; before : sp = 0x8001bd80      
+   0x80200004 <kern_entry+4>:   mv      sp,sp  ; sp = 0x80203000
+   ; 0x3 = align(0x1) + KSTACKSIZE(0x2)
+   0x80200008 <kern_entry+8>:   j       0x8020000a <kern_init>
+   0x8020000a <kern_init>:      auipc   a0,0x3
+   0x8020000e <kern_init+4>:    addi    a0,a0,-2
+   0x80200012 <kern_init+8>:    auipc   a2,0x3
+   0x80200016 <kern_init+12>:   addi    a2,a2,-10
+   0x8020001a <kern_init+16>:   addi    sp,sp,-16
+   0x8020001c <kern_init+18>:   li      a1,0
+   0x8020001e <kern_init+20>:   sub     a2,a2,a0
+```
 ## Notes
 
 ### 0.1
