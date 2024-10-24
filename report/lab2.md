@@ -168,8 +168,16 @@ default_free_pages(struct Page *base, size_t n) {
 
 #### 练习2：实现 Best-Fit 连续物理内存分配算法（需要编程）
 在完成练习一后，参考kern/mm/default_pmm.c对First Fit算法的实现，编程实现Best Fit页面分配算法，算法的时空复杂度不做要求，能通过测试即可。
+```
 请在实验报告中简要说明你的设计实现过程，阐述代码是如何对物理内存进行分配和释放，并回答如下问题：
+```
+
+best_fit_init、best_fit_init_memmap以及best_fit_free_pages函数的实现与default_pmm.c中的函数完全相同
+
+对于`best_fit_alloc_pages`来说，只需要遍历链表，不断更新满足要求的最小的页，并使用page指针进行记录即可。
 - 你的 Best-Fit 算法是否有进一步的改进空间？
+
+还是没有解决上面说的碎片化问题。
 
 #### 扩展练习Challenge：buddy system（伙伴系统）分配算法（需要编程）
 
