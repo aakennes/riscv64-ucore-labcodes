@@ -195,7 +195,29 @@ slub算法，实现两层架构的高效内存单元分配，第一层是基于�
 > 如果 OS 无法提前知道当前硬件的可用物理内存范围，请问你有何办法让 OS 获取可用物理内存范围？
 - 从BIOS/UEFI提供的内存映射表，或高级配置与电源接口（ACPI）表获取。系统启动时，BIOS/UEFI会扫描硬件并生成内存映射表，这个表中包含了内存的信息；此外，ACPI表也类似。在系统启动时，BIOS/UEFI会通过特定的数据结构或内存区域实现，此后操作系统在启动过程中会解析这些表。
 - 从硬件抽象层HAL获取：HAL提供了一组标准化的接口，用于访问硬件资源，其中的内存管理接口可用用来访问物理内存的信息。
-- 内存探测：由系统进行主动的内存探测，x86架构中，通过不断向地址中写入0x55AA5511到地址，然后读取该地址的信息，以确认内存是否存在。
+- 内存探测：由系统进行主动的内存探测，x86架构中，通过不断向地址中写入0x55AA到地址（为什么是55AA，因为55AA包含了0和1），然后读取该地址的信息，以确认内存是否存在，一段简单的内存探测代码如下，为了读写物理地址的内存，这段代码需要在内核态下运行：
+```C
+void detect_memory(uint32_t start_addr,uint32_t end_addr,uint32_t step_size)
+{
+    const test_pattern=0x55AA;
+    volatile uint16_t *addr;
+    for(addr=start_addr;addr<=end_addr;addr+=step_size)
+    {
+        //保存原来的值
+        uint16_t original_value=*addr;
+        //写入
+        *addr=test_pattern;
+        //读取验证
+        if(*addr!=test_pattern)
+        {
+            printf("Memory test failed at address 0x%08x!\n",(uint32_t)addr);
+        }
+        //恢复现场
+        *addr=original_value;
+    }
+}
+```
+
 - RISC-V架构提供了一种被称为“设备树”（Device Tree）的树形数据结构，用于描述硬件设备和资源，不同的节点描述不同的硬件组件，节点之间使用层次结构表示设备之间的关系，例如总线节点可以包含连接在总线上的设备子节点，而每个节点中有若干键值对，描述了各种设备的具体信息。RISC-V设备启动时，通过引导加载程序进行读取，将二进制格式（Flattened Device Tree, FDT）的设备树传递给内核，内核对其进行解析。
 
 一个简单的设备树的示例如下：[参考链接](https://liangzhouzz.github.io/2024/06/08/riscv-5-设备树/)
