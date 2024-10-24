@@ -240,3 +240,16 @@ memory@80000000 {
 
 实验使用的qemu-4.1.1源码中，搜索“Device Tree Source for AMCC Bamboo”在pc-bios/bamboo.dts中，存有qemu的相关设备树，此外，qemu根目录中的device_tree.c提供了创建和读取设备树的相关代码。
 
+## 其他
+### 内存管理详述
+- __总述__ 寻找虚拟地址对应的页表项，释放虚拟地址所在的页，取消二级页表项的映射
+- __tools/kernel.ld__ 修改链接地址为0xFFFFFFFFC0200000
+- __entry.S__ 将sp寄存器指向自己内核分配的栈，并跳转kern_init。实现内核的初始化（分配一页内存存放三级页表，并将其最后一个页表项进行适当的设置）。构建一个页表，让satp指向这些页表，然后计算偏移量。
+- __kern_init__ 增加调用pmm_init的接口
+- __pmm_init__ 往上找找，另外，kern/sync/sync.h里增加了保存sstatus寄存器中断使能位信息和屏蔽中断的功能和根据保存的中断使能位来使能中断的功能；libs/list.h定义了双向链表api；libs/atomic.h定义了一些原子操作（见上面）
+- __kern/mm/memlayout.h__ 存了一些硬编码
+- __kern/mm/pmm.h(pmm.c)__ PADDR将虚拟地址转换为物理地址，KADDR将物理地址转换为虚拟地址
+
+### 其他内容
+- __Freelist__ Freelist一般是链表，用来维护哪些内存块可被分配，本实验中，freelist由list_entry连接起来，通过list_entry索引到struct* page，而这个内存块的大小存在page->property中。但是并没有实现碎片回收
+- __下次匹配__ 下次匹配（next-fit）算法在有一个内存分配请求时，从当前指针位置开始，向后搜索，寻找一个足够大的空闲内存块来满足请求，如果在当前指针位置之后没有找到足够大的空闲内存块，指针会回到内存的起始位置，继续向后搜索，直到找到合适的内存块或遍历完整个内存空间。下次匹配算法在某些情况下可以减少内存碎片，但是较大的空闲分区不容易保留
