@@ -1,9 +1,15 @@
 #include <pmm.h>
 #include <list.h>
 #include <string.h>
-#include "buddy_pmm.h"
 #include <stdio.h>
+#include "buddy_pmm.h"
 #include "slub.h"
+
+extern free_area_t free_area;
+
+#define free_list (free_area.free_list)
+#define nr_free (free_area.nr_free)
+
 
 static void
 buddy_fit_init(void)
@@ -203,7 +209,20 @@ buddy_fit_nr_free_pages(void)
 
 static void buddy_fit_check(void)
 {
+    struct kmem_cache slab_caches[20];
+    slub_system_init(slab_caches, 10);
 
+    void* o = slub_alloc(slab_caches,256);
+    void* o2 = slub_alloc(slab_caches,256);
+    void* o3 = slub_alloc(slab_caches,256);
+    void* o4 = slub_alloc(slab_caches,512);
+    void* o5 = slub_alloc(slab_caches,512);
+    cprintf("分配的第一个256的小内存在%x\n",o);
+    cprintf("分配的第一个256的小内存在%x\n",o2);
+    cprintf("分配的第一个256的小内存在%x\n",o3);
+    cprintf("分配的第一个512的小内存在%x\n",o4);
+    cprintf("分配的第一个512的小内存在%x\n",o5);
+    return ;
 }
 
 const struct pmm_manager buddy_pmm_manager = {
