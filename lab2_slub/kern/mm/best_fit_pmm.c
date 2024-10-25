@@ -3,6 +3,7 @@
 #include <string.h>
 #include <best_fit_pmm.h>
 #include <stdio.h>
+#include "slub.h"
 
 /* In the first fit algorithm, the allocator keeps a list of free blocks (known as the free list) and,
    on receiving a request for memory, scans along the list for the first block that is large enough to
@@ -129,7 +130,7 @@ best_fit_init_memmap(struct Page *base, size_t n)
     }
 }
 
-static struct Page *
+struct Page *
 best_fit_alloc_pages(size_t n)
 {
     assert(n > 0);
@@ -443,6 +444,28 @@ best_fit_check(void)
     cprintf("grading: %d / %d points\n", score, sumscore);
 #endif
 }
+struct kmem_cache slab_caches[20];
+static void
+slub_check(void)
+{
+    cputs("CHECK BEGIN");
+    slub_system_init(slab_caches, 10);
+
+    void* o = slub_alloc(slab_caches,256);cprintf("分配的第1个256的小内存在%x\n",o);
+    void* o2 = slub_alloc(slab_caches,256);cprintf("分配的第2个256的小内存在%x\n",o2);
+    void* o3 = slub_alloc(slab_caches,256);cprintf("分配的第3个256的小内存在%x\n",o3);
+    void* o4 = slub_alloc(slab_caches,256);cprintf("分配的第4个256的小内存在%x\n",o4);
+    void* o5 = slub_alloc(slab_caches,256);cprintf("分配的第5个256的小内存在%x\n",o5);
+    void* o6 = slub_alloc(slab_caches,512);cprintf("分配的第1个512的小内存在%x\n",o6);
+    void* o7 = slub_alloc(slab_caches,512);cprintf("分配的第2个512的小内存在%x\n",o7);
+    void* o8 = slub_alloc(slab_caches,512);cprintf("分配的第3个512的小内存在%x\n",o8);
+    void* o9 = slub_alloc(slab_caches,512);cprintf("分配的第4个512的小内存在%x\n",o9);
+    
+    
+    
+    
+    return ;
+}
 // 这个结构体在
 const struct pmm_manager best_fit_pmm_manager = {
     .name = "best_fit_pmm_manager",
@@ -451,5 +474,5 @@ const struct pmm_manager best_fit_pmm_manager = {
     .alloc_pages = best_fit_alloc_pages,
     .free_pages = best_fit_free_pages,
     .nr_free_pages = best_fit_nr_free_pages,
-    .check = best_fit_check,
+    .check = slub_check,
 };

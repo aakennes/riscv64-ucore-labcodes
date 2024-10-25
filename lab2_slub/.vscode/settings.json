@@ -4,6 +4,7 @@
         "pmm.h": "c",
         "atomic.h": "c",
         "string.h": "c",
-        "slub.h": "c"
+        "slub.h": "c",
+        "stdio.h": "c"
     }
 }

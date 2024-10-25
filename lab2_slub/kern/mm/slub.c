@@ -4,8 +4,11 @@
 #include <stdio.h>
 #include "slub.h"
 
+// extern struct Page *
+// buddy_fit_alloc_pages(size_t n);
+
 extern struct Page *
-buddy_fit_alloc_pages(size_t n);
+best_fit_alloc_pages(size_t n);
 
 #define MIN_PARTIAL_NUM 10
 // 限制struct kmem_cache_node中的partial链表slab的数量。如果大于这个min_partial的值，那么多余的slab就会被释放
@@ -78,7 +81,11 @@ void slub_system_init(struct kmem_cache *slab_caches, int cache_num){
 
 static void* new_slab_alloc(struct kmem_cache *s,struct kmem_cache_cpu *n){
     s->oo++;
-    return n->page = *(void**)n->freelist = buddy_fit_alloc_pages(s->size);
+    // cprintf("%d %d\n",oo_order(s->oo),s->size);
+    void *newpage = best_fit_alloc_pages(s->size);
+    n->page = newpage;
+    n->freelist = &newpage;
+    return newpage;
 }
 
 /* TODO:slab_alloc 向kmem_cache中申请一块内存
@@ -92,19 +99,20 @@ static void* new_slab_alloc(struct kmem_cache *s,struct kmem_cache_cpu *n){
  */ 
 static void* slab_alloc(struct kmem_cache *s){
     if(oo_objectnum(s->oo) == 0){
-        return new_slab_alloc(s, &s->cpu_slab);
+        new_slab_alloc(s, &s->cpu_slab);
     }
     void **object = s->cpu_slab.freelist;
+    // cprintf("%x\n",*object);
     if(object != NULL){
         // 更新freelist
-        s->cpu_slab.freelist = *(void **)(object + s->offset);
+        s->cpu_slab.freelist = (object + (s->size >> 3));
     }else{
         // 移动slab至full池
         list_add(&s->local_node.full, *object);
         s->local_node.nr_full++;
         *object = new_slab_alloc(s, &s->cpu_slab);
     }
-    return *object;
+    return object;
 }
 
 /* TODO:slub_alloc 向slub中申请一块内存
@@ -118,7 +126,7 @@ static void* slab_alloc(struct kmem_cache *s){
 void* slub_alloc(struct kmem_cache *slab_caches, uint32_t size){
     int index = 0;
     int nowsize = SLAB_BASE_SIZE;
-    while(index <= MAX_CACHE_NUM && size >= nowsize * index){
+    while(index <= MAX_CACHE_NUM && size >= (nowsize + 1) * (1 << index)){
         index++;
     }
     return slab_alloc(&slab_caches[index]);

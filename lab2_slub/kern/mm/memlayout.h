@@ -37,6 +37,17 @@ struct Page {
     uint64_t flags;                 // array of flags that describe the status of the page frame
     unsigned int property;          // the num of free block, used in first fit pm manager
     list_entry_t page_link;         // free list link
+
+    struct{
+		uint32_t inuse:16;          // 表示正在使用的Object的个数
+		uint32_t objects:16;        // 页中包含slab object的个数
+	};
+	union{
+		uint64_t private;
+		struct kmem_cache *slab;
+		struct Page *first_page;
+	};
+	void *freelist;
 };
 
 /* Flags describing the status of a page frame */

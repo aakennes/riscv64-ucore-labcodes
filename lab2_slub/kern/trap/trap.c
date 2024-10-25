@@ -192,7 +192,7 @@ static inline void trap_dispatch(struct trapframe *tf) {
         interrupt_handler(tf);
     } else {
         // exceptions
-        exception_handler(tf);
+        // exception_handler(tf);
     }
 }
 

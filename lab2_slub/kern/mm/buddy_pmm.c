@@ -119,7 +119,6 @@ buddy_fit_alloc_pages(size_t n)
         nr_free -= n;            // 当前可用的空闲页面减少
         ClearPageProperty(page); // 由于目标页已经分配出去，此处清理page属性
     }
-
     return page;
 }
 
@@ -206,22 +205,22 @@ buddy_fit_nr_free_pages(void)
 {
     return nr_free;
 }
-struct kmem_cache slab_caches[20];
+// struct kmem_cache slab_caches[20];
 static void buddy_fit_check(void)
 {
-    cputs("CHECK BEGIN");
-    slub_system_init(slab_caches, 10);
+    // cputs("CHECK BEGIN");
+    // slub_system_init(slab_caches, 10);
 
-    void* o = slub_alloc(slab_caches,256);
-    void* o2 = slub_alloc(slab_caches,256);
-    void* o3 = slub_alloc(slab_caches,256);
-    void* o4 = slub_alloc(slab_caches,512);
-    void* o5 = slub_alloc(slab_caches,512);
-    cprintf("分配的第一个256的小内存在%x\n",o);
-    cprintf("分配的第一个256的小内存在%x\n",o2);
-    cprintf("分配的第一个256的小内存在%x\n",o3);
-    cprintf("分配的第一个512的小内存在%x\n",o4);
-    cprintf("分配的第一个512的小内存在%x\n",o5);
+    // void* o = slub_alloc(slab_caches,256);
+    // cprintf("分配的第1个256的小内存在%x\n",o);
+    // void* o2 = slub_alloc(slab_caches,256);
+    // cprintf("分配的第2个256的小内存在%x\n",o2);
+    // void* o3 = slub_alloc(slab_caches,256);
+    // // void* o4 = slub_alloc(slab_caches,512);
+    // // void* o5 = slub_alloc(slab_caches,512);
+    // cprintf("分配的第3个256的小内存在%x\n",o3);
+    // // cprintf("分配的第一个512的小内存在%x\n",o4);
+    // // cprintf("分配的第一个512的小内存在%x\n",o5);
     return ;
 }
 
