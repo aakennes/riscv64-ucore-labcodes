@@ -360,6 +360,7 @@ basic_check(void)
 
 // LAB2: below code is used to check the best fit allocation algorithm
 // NOTICE: You SHOULD NOT CHANGE basic_check, default_check functions!
+#define ucore_test
 static void
 best_fit_check(void)
 {
