@@ -71,7 +71,7 @@ buddy_fit_init_memmap(struct Page *base, size_t n)
     }
 }
 
-static struct Page *
+struct Page *
 buddy_fit_alloc_pages(size_t n)
 {
     assert(n > 0);
@@ -206,10 +206,10 @@ buddy_fit_nr_free_pages(void)
 {
     return nr_free;
 }
-
+struct kmem_cache slab_caches[20];
 static void buddy_fit_check(void)
 {
-    struct kmem_cache slab_caches[20];
+    cputs("CHECK BEGIN");
     slub_system_init(slab_caches, 10);
 
     void* o = slub_alloc(slab_caches,256);
