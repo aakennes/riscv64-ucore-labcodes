@@ -354,30 +354,6 @@ brkfun=readline
 #     '100 ticks'                                                 \
 #     'End of Test.'
 
-# echo "<<<<<<<<<<<<<<< here_run_qemu <<<<<<<<<<<<<<<<<<"
-# run_qemu
-# echo "<<<<<<<<<<<<<<< here_run_check <<<<<<<<<<<<<<<<<<"
-
-# pts=5
-# quick_check 'check physical_memory_map_information'                                         \
-#     'memory management: best_fit_pmm_manager'                     \
-#     '  memory: 0x0000000007e00000, [0x0000000080200000, 0x0000000087ffffff].'                                  \
-
-# pts=20
-# quick_check 'check_best_fit'                                       \
-#     'check_alloc_page() succeeded!'                                  \
-#     'satp virtual address: 0xffffffffc0205000'                       \
-#     'satp physical address: 0x0000000080205000'                      \
-
-# pts=5
-# quick_check 'check ticks'                                       \
-#     '++ setup timer interrupts'                                 \
-#     '100 ticks'                                                 \
-
-# ## print final-score
-# show_final
-
-
 echo "<<<<<<<<<<<<<<< here_run_qemu <<<<<<<<<<<<<<<<<<"
 run_qemu
 echo "<<<<<<<<<<<<<<< here_run_check <<<<<<<<<<<<<<<<<<"
@@ -400,3 +376,4 @@ quick_check 'check ticks'                                       \
 
 ## print final-score
 show_final
+
