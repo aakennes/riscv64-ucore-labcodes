@@ -306,32 +306,32 @@ static void buddy_fit_check(void)
     free_page(p1);
     free_page(p2);
     
-    p0=alloc_pages(70);
-    p1=alloc_pages(35);
+    p0=alloc_pages(80);
+    p1=alloc_pages(40);
     //注意，一个结构体指针是20个字节，有3个int,3*4，还有一个双向链表,两个指针是8。加载一起是20。
     cprintf("p0 %p\n",p0);
     cprintf("p1 %p\n",p1);
     cprintf("p1-p0 equal %p ?=128\n",p1-p0);//应该差128
     assert((p1-p0)==128);
 
-    p2=alloc_pages(257);
+    p2=alloc_pages(300);
     cprintf("p2 %p\n",p2);
     cprintf("p2-p1 equal %p ?=128+256\n",p2-p1);//应该差384
     assert((p2-p1)==384);
 
-    p3=alloc_pages(63);
+    p3=alloc_pages(50);
     cprintf("p3 %p\n",p3);
     cprintf("p3-p1 equal %p ?=64\n",p3-p1);//应该差64
     assert((p3-p1)==64);
     
-    free_pages(p0,70);    
+    free_pages(p0,80);    
     cprintf("free p0!\n");
-    free_pages(p1,35);
+    free_pages(p1,40);
     cprintf("free p1!\n");
-    free_pages(p3,63);    
+    free_pages(p3,50);    
     cprintf("free p3!\n");
     
-    p4=alloc_pages(255);
+    p4=alloc_pages(300);
     cprintf("p4 %p\n",p4);
     cprintf("p2-p4 equal %p ?=512\n",p2-p4);//应该差512
     assert((p2-p4)==512);
