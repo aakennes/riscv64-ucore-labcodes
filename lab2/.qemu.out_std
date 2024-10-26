@@ -22,49 +22,57 @@ PMP1: 0x0000000000000000-0xffffffffffffffff (A,R,W,X)
 (THU.CST) os is loading ...
 Special kernel symbols:
   entry  0xffffffffc0200032 (virtual)
-  etext  0xffffffffc02014c4 (virtual)
+  etext  0xffffffffc0201434 (virtual)
   edata  0xffffffffc0205010 (virtual)
-  end    0xffffffffc0285478 (virtual)
-Kernel executable memory footprint: 534KB
+  end    0xffffffffc0253678 (virtual)
+Kernel executable memory footprint: 334KB
 memory management: buddy_pmm_manager
 physcial memory map:
   memory: 0x0000000007e00000, [0x0000000080200000, 0x0000000087ffffff].
-7777
-idx: 8191, offset: 0
-Page 0 are allocated.
-idx: 8192, offset: 2
-Page 2 are allocated.
-idx: 8193, offset: 4
-Page 4 are allocated.
-idx: 127, offset: 0
-Page 0 are allocated.
-idx: 257, offset: 128
-Page 128 are allocated.
-p0 0xffffffffc028f6f0
-p1 0xffffffffc0290af0
+ALLOC: idx: 16383, offset: 0
+alloc page offset 0
+ALLOC: idx: 16384, offset: 1
+alloc page offset 1
+ALLOC: idx: 16385, offset: 2
+alloc page offset 2
+free page offset 0
+),free page offset 1
+),free page offset 2
+),ALLOC: idx: 127, offset: 0
+alloc page offset 0
+ALLOC: idx: 257, offset: 128
+alloc page offset 128
+p0 0xffffffffc025cf20
+p1 0xffffffffc025e320
 p1-p0 equal 0x80 ?=128
-idx: 32, offset: 512
-Page 512 are allocated.
-p2 0xffffffffc02946f0
+ALLOC: idx: 32, offset: 512
+alloc page offset 512
+p2 0xffffffffc0261f20
 p2-p1 equal 0x180 ?=128+256
-idx: 258, offset: 192
-Page 192 are allocated.
-p3 0xffffffffc02914f0
+ALLOC: idx: 258, offset: 192
+alloc page offset 192
+p3 0xffffffffc025ed20
 p3-p1 equal 0x40 ?=64
-free p0!
-free p1!
-free p3!
-idx: 63, offset: 0
-Page 0 are allocated.
-p4 0xffffffffc028f6f0
+free page offset 0
+),free p0!
+free page offset 128
+),free p1!
+free page offset 192
+),free p3!
+ALLOC: idx: 63, offset: 0
+alloc page offset 0
+p4 0xffffffffc025cf20
 p2-p4 equal 0x200 ?=512
-idx: 64, offset: 256
-Page 256 are allocated.
-p5 0xffffffffc0291ef0
+ALLOC: idx: 64, offset: 256
+alloc page offset 256
+p5 0xffffffffc025f720
 p5-p4 equal 0x100 ?=256
-free p2!
-free p4!
-free p5!
+free page offset 512
+),free p2!
+free page offset 0
+),free p4!
+free page offset 256
+),free p5!
 CHECK DONE!
 check_alloc_page() succeeded!
 satp virtual address: 0xffffffffc0204000

@@ -12,11 +12,10 @@ free_area_t free_area;
 //线段树辅助函数
 #define left_leaf(idx) ((idx<<1)+1)
 #define right_leaf(idx) ((idx<<1)+2)
-#define parent(idx) ((idx>>1)-1)
+#define parent(idx) (((idx+1)>>1)-1)
 
 #define is_pow2(x) (!((x)&((x)-1)))
 #define mmax(a,b) ((a)>(b)?(a):(b))
-
 #define maxm 65536
 //板子取下一个整次幂函数
 static unsigned fixsize(unsigned size) {
@@ -49,6 +48,7 @@ node_num:节点的块数
 */
 static void buddy_init(int size)
 {
+    // cprintf("1111\n");
     if(!is_pow2(size)||size<=0)  return;
     unsigned node_size;
     root[0].size=size;
@@ -63,6 +63,7 @@ static void buddy_init(int size)
 static void
 buddy_fit_init_memmap(struct Page *base, size_t n)
 {
+    // cprintf("2222\n");
     //继承自best_fit_pmm.c
     //----------
     assert(n > 0);
@@ -127,6 +128,7 @@ buddy_fit_init_memmap(struct Page *base, size_t n)
 static int buddy2_alloc
 (struct node* self,int size)
 {
+    // cprintf("3333\n");
     unsigned node_size;
     unsigned idx=0;
     unsigned offset=0;
@@ -137,6 +139,7 @@ static int buddy2_alloc
 
     for(node_size=self->size;node_size!=size;node_size>>=1)
     {
+        // cprintf("1145\n");
         idxl=-1;
         idxr=-1;
         if(self[left_leaf(idx)].maxx>=size)  idxl=left_leaf(idx);
@@ -149,6 +152,7 @@ static int buddy2_alloc
     //偏移：索引*节点大小-内存池大小
     //当前节点的内存块在整个内存池的结束位置-整个内存池的大小=起始位置
     offset=(idx+1)*node_size-self->size;
+    cprintf("idx: %d, offset: %d\n",idx,offset);
     idx=parent(idx);
     /*
         关于为什么不会出现连续的块：
@@ -157,8 +161,15 @@ static int buddy2_alloc
     */
     for(;idx>=0;idx=parent(idx))
     {
+        // cprintf("1919\n");
         self[idx].maxx=mmax(self[left_leaf(idx)].maxx,self[right_leaf(idx)].maxx);
+        if(!idx)
+        {
+            break;
+        }
     }
+    
+    // cprintf("1920\n");
     return offset;
 
 }
@@ -172,13 +183,14 @@ nrfree削减，page->property记录空闲块的大小
 static struct Page *
 buddy_fit_alloc_pages(size_t n)
 {
+    // cprintf("4444\n");
     assert(n > 0);
     if (n > nr_free)
     {
         return NULL;
     }
     if(n<=0)  n=1;
-    else n=fixsize(n);
+    else if(!is_pow2(n))  n=fixsize(n);
     
     unsigned long offset=buddy2_alloc(root,n);
     if(offset==-1)
@@ -211,6 +223,7 @@ buddy_fit_alloc_pages(size_t n)
 static void
 buddy_fit_free(struct node* self,int offset)
 {
+    // cprintf("5555\n");
     unsigned node_size,idx;
     unsigned idxl,idxr;
     node_size=1;
@@ -223,11 +236,16 @@ buddy_fit_free(struct node* self,int offset)
     idx=parent(idx);
     for(;idx>=0;idx=parent(idx))
     {
+        // cprintf("114514\n");
         node_size<<=1;
         idxl=self[left_leaf(idx)].maxx;
         idxr=self[right_leaf(idx)].maxx;
         if(idxl+idxr==node_size)  self[idx].maxx=node_size;//并块
         else  self[idx].maxx=mmax(idxl,idxr);//没有
+        if(!idx)
+        {
+            break;
+        }
     }
 }
 
@@ -237,6 +255,7 @@ buddy_fit_free(struct node* self,int offset)
 static void
 buddy_fit_free_pages(struct Page *base, size_t n)
 {
+    // cprintf("6666\n");
     //-----first-fit-----
     assert(n > 0);
     n=base->property;//在这里实际上n没什么用
@@ -254,6 +273,7 @@ buddy_fit_free_pages(struct Page *base, size_t n)
     //-----first-fit-----
     struct Page *p = base;
     for (; p != base + n; p ++) {
+        // cprintf("1919810\n");
         // assert(!PageReserved(p) && !PageProperty(p));
         // p->flags = 0;
         assert(!PageReserved(p));
@@ -274,6 +294,7 @@ buddy_fit_nr_free_pages(void)
 
 static void buddy_fit_check(void)
 {
+    cprintf("7777\n");
     struct Page *p0, *p1,*p2;
     p0 = p1 = NULL;
     p2=NULL;
@@ -291,14 +312,17 @@ static void buddy_fit_check(void)
     cprintf("p0 %p\n",p0);
     cprintf("p1 %p\n",p1);
     cprintf("p1-p0 equal %p ?=128\n",p1-p0);//应该差128
-    
+    assert((p1-p0)==128);
+
     p2=alloc_pages(257);
     cprintf("p2 %p\n",p2);
     cprintf("p2-p1 equal %p ?=128+256\n",p2-p1);//应该差384
-    
+    assert((p2-p1)==384);
+
     p3=alloc_pages(63);
     cprintf("p3 %p\n",p3);
     cprintf("p3-p1 equal %p ?=64\n",p3-p1);//应该差64
+    assert((p3-p1)==64);
     
     free_pages(p0,70);    
     cprintf("free p0!\n");
@@ -310,10 +334,12 @@ static void buddy_fit_check(void)
     p4=alloc_pages(255);
     cprintf("p4 %p\n",p4);
     cprintf("p2-p4 equal %p ?=512\n",p2-p4);//应该差512
+    assert((p2-p4)==512);
     
     p5=alloc_pages(255);
     cprintf("p5 %p\n",p5);
     cprintf("p5-p4 equal %p ?=256\n",p5-p4);//应该差256
+    assert((p5-p4)==256);
         free_pages(p2,257);    
     cprintf("free p2!\n");
         free_pages(p4,255);    

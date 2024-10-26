@@ -1,5 +1,6 @@
 #include <default_pmm.h>
 #include <best_fit_pmm.h>
+#include <buddy_pmm.h>
 #include <defs.h>
 #include <error.h>
 #include <memlayout.h>
@@ -10,7 +11,7 @@
 #include <string.h>
 #include <../sync/sync.h>
 #include <riscv.h>
-#include <buddy_pmm.h>
+
 // #include "buddy_pmm.h"
 
 // virtual address of physical page array
