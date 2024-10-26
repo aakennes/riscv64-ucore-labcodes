@@ -13,15 +13,15 @@
  * offset默认为4Bytes，即存储objsize的整型空间
  */
 struct kmem_cache_cpu {
-    void **freelist; // 指向下一个空闲object的指针
+    void **freelist;   // 指向下一个空闲object的指针
     struct Page *page; // slab/多页page 起始指针
 };
 
 struct kmem_cache_node {
     uint64_t nr_partial; // partial slab链表中slab的数量 
     uint64_t nr_full;
-    struct list_entry partial; // partial slab链表表头
-    struct list_entry full;
+    list_entry_t partial; // partial slab链表表头
+    list_entry_t full;
 };
 
 struct kmem_cache {
@@ -29,6 +29,7 @@ struct kmem_cache {
 	int32_t size; // mem_cache中slab的规格
 	int32_t offset; // 页中的空闲slab组成一个链表，在slab中偏移量为offset的地方中存放下一个slab的地址
 	uint64_t oo; 
+    uint64_t maxobjnum_perslab;
     // oo = order<<OO_SHIFT |slab_num（存在slab占用多个页的情况）
     // 用来存放分配给slub的页框的阶数(批发2^order页)和 kmem_cache中的object数量(低OO_SHIFT位)
 	struct kmem_cache_node local_node;
@@ -38,5 +39,6 @@ struct kmem_cache {
 
 void slub_system_init(struct kmem_cache *slab_caches, int cache_num);
 void* slub_alloc(struct kmem_cache *slab_caches, uint32_t size);
+void slub_free(struct kmem_cache *s, size_t size, void* object);
 
 #endif /* ! __KERN_MM_SLUB_FIT_PMM_H__ */
