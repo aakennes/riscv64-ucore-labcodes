@@ -38,8 +38,9 @@ swap_init(void)
         max_swap_offset < MAX_SWAP_OFFSET_LIMIT)) {
         panic("bad max_swap_offset %08x.\n", max_swap_offset);
      }
-
+     // Znamya: change here
      sm = &swap_manager_clock;//use first in first out Page Replacement Algorithm
+     // sm=&swap_manager_fifo;
      int r = sm->init();
      
      if (r == 0)

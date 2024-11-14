@@ -95,12 +95,12 @@ _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tic
         {
             list_del(entry);
             *ptr_page = page;
-            cprintf("curr_ptr %p\n", curr_ptr);
+            cprintf("curr_ptr %p\n", entry);
             break;
         }
         else
         {
-            p-> visited = 0;
+            page-> visited = 0;
         }
         head=entry;
         
