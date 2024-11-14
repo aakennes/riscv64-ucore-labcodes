@@ -88,9 +88,22 @@ _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tic
         
         // 获取当前页面对应的Page结构指针
         list_entry_t* entry = list_next(head);
-        
+        struct Page *page = le2page(entry, pra_page_link);
         // 如果当前页面未被访问，则将该页面从页面链表中删除，并将该页面指针赋值给ptr_page作为换出页面
         // 如果当前页面已被访问，则将visited标志置为0，表示该页面已被重新访问
+        if (page-> visited == 0)
+        {
+            list_del(entry);
+            *ptr_page = page;
+            cprintf("curr_ptr %p\n", curr_ptr);
+            break;
+        }
+        else
+        {
+            p-> visited = 0;
+        }
+        head=entry;
+        
     }
     return 0;
 }
