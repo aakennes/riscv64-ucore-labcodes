@@ -216,6 +216,7 @@ void pmm_init(void) {
 //  la:     the linear address need to map
 //  create: a logical value to decide if alloc a page for PT
 // return vaule: the kernel virtual address of this pte
+// 寻找(有必要的时候分配)一个页表项
 pte_t *get_pte(pde_t *pgdir, uintptr_t la, bool create) {
     /*
      *
@@ -286,6 +287,7 @@ struct Page *get_page(pde_t *pgdir, uintptr_t la, pte_t **ptep_store) {
 // page_remove_pte - free an Page sturct which is related linear address la
 //                - and clean(invalidate) pte which is related linear address la
 // note: PT is changed, so the TLB need to be invalidate
+// 删除一个页表项以及它的映射
 static inline void page_remove_pte(pde_t *pgdir, uintptr_t la, pte_t *ptep) {
     /*
      *
@@ -340,7 +342,9 @@ void page_remove(pde_t *pgdir, uintptr_t la) {
 // return value: always 0
 // note: PT is changed, so the TLB need to be invalidate
 int page_insert(pde_t *pgdir, struct Page *page, uintptr_t la, uint32_t perm) {
+    // pgdir是页表基址(satp)，page对应物理页面，la是虚拟地址
     pte_t *ptep = get_pte(pgdir, la, 1);
+    // 先找到对应页表项的位置，如果原先不存在，get_pte()会分配页表项的内存
     if (ptep == NULL) {
         return -E_NO_MEM;
     }
@@ -411,8 +415,8 @@ static void check_pgdir(void) {
     assert(pte2page(*ptep) == p1);
     assert(page_ref(p1) == 1);
 
-    ptep = (pte_t *)KADDR(PDE_ADDR(boot_pgdir[0]));
-    ptep = (pte_t *)KADDR(PDE_ADDR(ptep[0])) + 1;
+    ptep = (pte_t *)KADDR(PDE_ADDR(boot_pgdir[0])); // 提取一级页表的地址
+    ptep = (pte_t *)KADDR(PDE_ADDR(ptep[0])) + 1;   // 提取二级页表的地址
     assert(get_pte(boot_pgdir, PGSIZE, 0) == ptep);
 
     p2 = alloc_page();
