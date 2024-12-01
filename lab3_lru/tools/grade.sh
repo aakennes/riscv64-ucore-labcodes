@@ -411,16 +411,10 @@ quick_check 'check swap page fault'                                     \
     'page fault at 0x00004000: K/W'                                     \
     'set up init env for check_swap over!'                              \
     'Store/AMO page fault'                                              \
-    'page fault at 0x00005000: K/W'                                     \
-    'curr_ptr 0xffffffffc02258a8'                                       \
-    'curr_ptr 0xffffffffc02258a8'                                       \
-    'swap_out: i 0, store page in vaddr 0x1000 to disk swap entry 2'    \
-    'Load page fault'                                                   \
-    'page fault at 0x00001000: K/R'                                     \
-    'curr_ptr 0xffffffffc02258f0'                                       \
-    'curr_ptr 0xffffffffc02258f0'                                       \
+    'page fault at 0x00005000: K/W'                                     \                                      \
+    'swap_out: i 0, store page in vaddr 0x1000 to disk swap entry 2'    \                                                   \                                 \                                      \
     'swap_out: i 0, store page in vaddr 0x2000 to disk swap entry 3'    \
-    'swap_in: load disk swap entry 2 with swap_page in vadr 0x1000'     \
+    'swap_in: load disk swap entry 5 with swap_page in vadr 0x4000'     \
     'count is 1, total is 8'                                            \
     'check_swap() succeeded!'                                           \
 
