@@ -35,21 +35,158 @@ get_pte()函数（位于`kern/mm/pmm.c`）用于在页表中查找或创建页�
 2. 
     没必要。如果拆成两个函数的话, 当查找未找到(即目标页表项未创建某级目录索引时)上层可能还需要调用新建页表项的操作, 分函数实现需要再进行一次查找, 会导致创建页表项的效率偏低(需要查询新建页表项上级目录位置)。当前使用 create 控制是否需要新建比较合适。另外合二为一后代码比较简短，维护方便。
 
-
-#### 练习3：给未被映射的地址映射上物理页（需要编程）
-补充完成do_pgfault（mm/vmm.c）函数，给未被映射的地址映射上物理页。设置访问权限 的时候需要参考页面所在 VMA 的权限，同时需要注意映射物理页时需要操作内存控制 结构所指定的页表，而不是内核的页表。
-请在实验报告中简要说明你的设计实现过程。请回答如下问题：
- - 请描述页目录项（Page Directory Entry）和页表项（Page Table Entry）中组成部分对ucore实现页替换算法的潜在用处。
- - 如果ucore的缺页服务例程在执行过程中访问内存，出现了页访问异常，请问硬件要做哪些事情？
- - 数据结构Page的全局变量（其实是一个数组）的每一项与页表中的页目录项和页表项有无对应关系？如果有，其对应关系是啥？
-
 3. 
     页表中的页目录项和页表项通过 Page 结构体表示
 
+#### 练习3：给未被映射的地址映射上物理页（需要编程）
+补充完成do_pgfault（mm/vmm.c）函数，给未被映射的地址映射上物理页。设置访问权限 的时候需要参考页面所在 VMA 的权限，同时需要注意映射物理页时需要操作内存控制 结构所指定的页表，而不是内核的页表。
+> 请在实验报告中简要说明你的设计实现过程。
+
+根据注释进行编写即可，较为简单。需要注意的是代码上下文中存在一些提示信息，仔细根据注释和要实现的功能进行分析即可。具体参见代码中的注释。
+```C
+int do_pgfault(struct mm_struct *mm, uint_t error_code, uintptr_t addr)
+{
+    int ret = -E_INVAL;
+    struct vma_struct *vma = find_vma(mm, addr);
+
+    pgfault_num++;
+    if (vma == NULL || vma->vm_start > addr)
+    {
+        cprintf("not valid addr %x, and  can not find it in vma\n", addr);
+        goto failed;
+    }
+    uint32_t perm = PTE_U;
+    if (vma->vm_flags & VM_WRITE)
+    {
+        perm |= (PTE_R | PTE_W);
+    }
+    addr = ROUNDDOWN(addr, PGSIZE);
+
+    ret = -E_NO_MEM;
+
+    pte_t *ptep = NULL;
+    ptep = get_pte(mm->pgdir, addr, 1); 
+    if (*ptep == 0)
+    {
+        if (pgdir_alloc_page(mm->pgdir, addr, perm) == NULL)
+        {
+            cprintf("pgdir_alloc_page in do_pgfault failed\n");
+            goto failed;
+        }
+    }
+    else
+    {
+        if (swap_init_ok)
+        {
+            struct Page *page = NULL;
+            /*
+            swap_in函数的定义参见本目录下的swap.c
+            其中，mm是一个param_out，返回值只是用于判断读取是否成功
+            返回值为0的时候说明读取成功
+            */
+            ret = swap_in(mm, addr, &page); // 调用swap_in函数从磁盘上读取数据
+            if (ret != 0)
+            {
+                cprintf("swap_in error at vmm.c\n");
+                // 注意到函数最后面的返回值，有个failed标签
+                goto failed;
+            }
+            
+            //(2) According to the mm,
+            // addr AND page, setup the
+            // map of phy addr <--->
+            // logical addr
+            page_insert(mm->pgdir, page, addr, perm);
+            //(3) make the page swappable.
+            swap_map_swappable(mm, addr, page, 1);
+            page->pra_vaddr = addr;
+        }
+        else
+        {
+            cprintf("no swap_init_ok but ptep is %x, failed\n", *ptep);
+            goto failed;
+        }
+    }
+
+    ret = 0;
+failed:
+    return ret;
+}
+```
+
+请回答如下问题：
+> 请描述页目录项（PageDirectoryEntry）和页表项（PageTableEntry）中组成部分对ucore实现页替换算法的潜在用处。
+
+- 页目录项（PDE）和页表项（PTE）中，Accessed位用于记录page是否被访问，以及Dirty位是否被修改。替换算法可以根据这些记录来确定哪些页需要被驱逐。
+- 页表项（PTE）用于记录从虚拟地址到屋里地址的映射。
+- 页表项也用于记录物理页与swap磁盘上扇区的映射关系。
+
+
+>  如果ucore的缺页服务例程在执行过程中访问内存，出现了页访问异常，请问硬件要做哪些事情？
+
+此时会固定的跳转到初始化stvec时设置好的处理程序地址，保存现场，准备进行中断。同时，将发生缺页中断的地址保存到`trapframe`中。
+
+然后跳转到中断处理函数trap()，由`do_pgfault`处理page fault，然后返回__trapret恢复保存的寄存器，sret跳转回原程序。
+
+
+> 数据结构Page的全局变量（其实是一个数组）的每一项与页表中的页目录项和页表项有无对应关系？
+如果有，其对应关系是啥？
+
+`Page` 和 `PTE,PDE` 有对应关系：当一个页对应的某一级页表项不存在时，会为其分配一个页，即存在全局变量 `Page` 中；当这个页面被换出的时候，它对应的页表项和页目录项也会释放对应页面，即从全局变量 `Page` 中删除。
+
+
+
+
+
 #### 练习4：补充完成Clock页替换算法（需要编程）
 通过之前的练习，相信大家对FIFO的页面替换算法有了更深入的了解，现在请在我们给出的框架上，填写代码，实现 Clock页替换算法（mm/swap_clock.c）。
-请在实验报告中简要说明你的设计实现过程。请回答如下问题：
- - 比较Clock页替换算法和FIFO算法的不同。
+> 请在实验报告中简要说明你的设计实现过程。
+
+主要的难点在于clock里面的驱逐机制。只要理解clock替换算法本身即可，从成环的链表中逐个遍历，直到找到第一个需要驱逐的页为止。这个过程类似一个正在表盘上转动的时针，所以叫做clock算法。
+```C
+static int
+_clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tick)
+{
+     list_entry_t *head=(list_entry_t*) mm->sm_priv;
+         assert(head != NULL);
+     assert(in_tick==0);
+     /* Select the victim */
+     //(1)  unlink the  earliest arrival page in front of pra_list_head qeueue
+     //(2)  set the addr of addr of this page to ptr_page
+    while (1) {
+        /*LAB3 EXERCISE 4: YOUR CODE*/ 
+        // 编写代码
+        // 遍历页面链表pra_list_head，查找最早未被访问的页面
+        
+        // 获取当前页面对应的Page结构指针
+        list_entry_t* entry = list_next(head);
+        struct Page *page = le2page(entry, pra_page_link);
+        // 如果当前页面未被访问，则将该页面从页面链表中删除，并将该页面指针赋值给ptr_page作为换出页面
+        // 如果当前页面已被访问，则将visited标志置为0，表示该页面已被重新访问
+        if (page-> visited == 0)
+        {
+            list_del(entry);
+            *ptr_page = page;
+            cprintf("curr_ptr %p\n", entry);
+            break;
+        }
+        else
+        {
+            page-> visited = 0;
+        }
+        head=entry;
+        
+    }
+    return 0;
+}
+```
+
+请回答如下问题：
+> 比较Clock页替换算法和FIFO算法的不同。
+
+Clock算法与FIFO算法整体上有些类似，Clock是换出最先找到的`PTE_A`标志位为0的页。如果链表上所有页该标志位都为1，扫描一遍后，Clock并不会置换任何页，而是进行第二遍扫描。如果在进行第二次扫描之前，对应页又被访问了，则该页不会被置换出去，这即是Clock与FIFO最大的不同。  
+值得注意的是，在这里我们使用的是`PTE_A`作为标志位，因为我们期望硬件在访问过程中会改变它的值。而如果使用`visited`字段来标识的话，该字段只有在缺页异常时才会进行更新，在扫描过后无法恢复，达不到Clock算法的目的，效果上等同于FIFO。  
+
 
 #### 练习5：阅读代码和实现手册，理解页表映射方式相关知识（思考题）
 如果我们采用”一个大页“ 的页表映射方式，相比分级页表，有什么好处、优势，有什么坏处、风险？
