@@ -190,7 +190,7 @@ get_pid(void)
 // NOTE: before call switch_to, should load  base addr of "proc"'s new PDT
 void proc_run(struct proc_struct *proc)
 {
-    if (proc != current)
+    if (proc != current)//当前进程则不需要切换
     {
         // LAB4:EXERCISE3 YOUR CODE
         /*
@@ -201,6 +201,16 @@ void proc_run(struct proc_struct *proc)
          *   lcr3():                   Modify the value of CR3 register
          *   switch_to():              Context switching between two processes
          */
+        bool intr_flag;//禁用中断
+        struct proc_struct *last=current;
+        do
+        {
+            intr_flag=__intr_save();
+        }while(0);
+        current=proc;//切换当前进程为要运行的进程
+        lcr3(proc->cr3);//切换页表
+        switch_to(&(last->context),&(proc->context));//上下文切换
+        __intr_restore(intr_flag);
     }
 }
 
