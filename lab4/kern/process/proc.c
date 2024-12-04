@@ -370,7 +370,7 @@ int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
     if (copy_mm(clone_flags, proc) != 0)
     {
         goto bad_fork_cleanup_kstack;
-
+    }
     //    4. call copy_thread to setup tf & context in proc_struct
     copy_thread(proc, stack, tf);
 
