@@ -203,14 +203,13 @@ void proc_run(struct proc_struct *proc)
          */
         bool intr_flag;//禁用中断
         struct proc_struct *last=current;
-        do
+        local_intr_save(intr_flag);
         {
-            intr_flag=__intr_save();
-        }while(0);
-        current=proc;//切换当前进程为要运行的进程
-        lcr3(proc->cr3);//切换页表
-        switch_to(&(last->context),&(proc->context));//上下文切换
-        __intr_restore(intr_flag);
+            current=proc;//切换当前进程为要运行的进程
+            lcr3(proc->cr3);//切换页表
+            switch_to(&(last->context),&(proc->context));//上下文切换
+        }
+        local_intr_restore(intr_flag);
     }
 }
 
