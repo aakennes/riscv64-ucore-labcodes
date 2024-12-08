@@ -118,6 +118,7 @@ proc_run用于将指定的进程切换到CPU上运行。它的大致执行步骤
         * `do_fork` 函数作用是创建一个子进程, 通过 `copy_thread` 函数设置新创的子进程上下文和中断帧
         * 在后续的实验中, init_main 的工作就是创建特定的其他内核线程或用户进程
     * `init.c::kern_init` 最后执行 `cpu_idle`, 监听其他进程, 当存在其他进程时, 将第 0 号进程切换到其他进程执行, 即切换到第 1 个进程 initproc, 这一过程通过函数 `schedule` 实现
-        * `schedule` 的执行逻辑比较简单 : 设置当前进程的 need_resched 标志位 -> 在 proc_list 队列中查找下一个处于“就绪”态的线程或进程next -> 调用 `proc_run` 函数，保存当前进程current的执行现场, 恢复新进程的执行现场, 完成进程切换
-
+        * `schedule` 的执行逻辑比较简单 : 设置当前进程的 need_resched 标志位 -> 在 proc_list 队列中查找下一个处于“就绪”态的线程或进程next -> 调用 `proc_run` 函数，保存当前进程current的执行现场（）, 恢复新进程的执行现场, 完成进程切换
+    * 上下文切换：通过`switch_to`实现
+    * 中断恢复：通过`trapret`实现
 2. 
