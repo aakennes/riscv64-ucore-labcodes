@@ -68,9 +68,10 @@ if (++last_pid >= MAX_PID){
 }
 ```
 
-(问题, next_safe变量起什么作用?)
+即如果线程不再使用了, 则该线程的 id 会空余, 新线程在分配 id 时, 会优先分配最小的 id, 
+每个现有的线程(在链表内的线程)的 id 一定唯一。
 
-
+给新 fork 的线程分配一个唯一的 id 的函数在 `get_pid` 函数中, 静态变量 last_pid 为上一个进程的进程号, next_safe 为最小的不可用进程号, 当出现 (last_pid, next_safe) 区间内无空闲 id 时, 会从 (1, MAX_PID)开始, 两头收缩至 last_pid 处空闲。
 
 ## 练习3: 编写proc_run 函数（需要编码）
 
@@ -87,6 +88,12 @@ proc_run用于将指定的进程切换到CPU上运行。它的大致执行步骤
 
 * 在本实验的执行过程中，创建且运行了几个内核线程？
 
+#### Ans:
+
+实际上只创建了第 0 号线程 idleproc 和第 1 号线程 initproc
+
+
+
 完成代码编写后，编译并运行代码: make qemu
 
 如果可以得到如 附录A所示的显示内容 (仅供参考, 不是标准答案输出), 则基本正确。
@@ -97,7 +104,9 @@ proc_run用于将指定的进程切换到CPU上运行。它的大致执行步骤
 
 #### Ans:
 
-该语句在 `schedule` 函数中
+`local_intr_save` 会读取标志位 **SSTATUS_SIE**, 当发现 sstatus 中的 **SSTATUS_SIE** 为 1 时, 说明禁止中断, 并将 intr_flag 设置为 1。
+
+`local_intr_restore` 则会根据已保存的 intr_flag 恢复标志位 **SSTATUS_SIE**
 
 ## 补充
 
@@ -109,9 +118,15 @@ proc_run用于将指定的进程切换到CPU上运行。它的大致执行步骤
     * `proc_init`创建并初始化第 0 个内核线程 idleproc, 并通过 `kernel_thread` 函数创建第 1 个内核线程 initproc
         
         * `kernel_thread`通过实例化中断帧 tf 和 `do_fork` 函数实现
-        * `do_fork` 函数作用是创建一个子进程, 通过 `copy_thread` 函数设置新创的子进程上下文和中断帧
+        * `do_fork` 函数作用是创建一个子进程, 通过 `copy_thread` 函数设置新创的子进程上下文和中断帧, `copy_thread` 函数也将此时上下文的 ra 寄存器设定成了 `forkret` 函数的入口
         * 在后续的实验中, init_main 的工作就是创建特定的其他内核线程或用户进程
     * `init.c::kern_init` 最后执行 `cpu_idle`, 监听其他进程, 当存在其他进程时, 将第 0 号进程切换到其他进程执行, 即切换到第 1 个进程 initproc, 这一过程通过函数 `schedule` 实现
-        * `schedule` 的执行逻辑比较简单 : 设置当前进程的 need_resched 标志位 -> 在 proc_list 队列中查找下一个处于“就绪”态的线程或进程next -> 调用 `proc_run` 函数，保存当前进程current的执行现场, 恢复新进程的执行现场, 完成进程切换
+
+    * `schedule` 的执行逻辑比较简单 : 设置当前进程的 need_resched 标志位 -> 在 proc_list 队列中查找下一个处于“就绪”态的线程或进程next -> 调用 `proc_run` 函数，保存当前进程current的执行现场, 恢复新进程的执行现场, 使用 `switch_to` 函数完成进程切换
+        
+        * 在执行 `switch_to` 函数时, 会访问 ra 寄存器, ra 寄存器此时保存着 `forkret` 函数的入口,
+        因此会跳转到 `forkret` 函数
+        * `forkret` 函数将进程中断帧放在了 sp 寄存器(栈顶), 由此可以通过 `__trapret` 从中断帧中恢复所有寄存器
+        * 恢复的寄存器中, epc 寄存器指向了 `kernel_thread_entry` 函数, 通过 `s0` 寄存器执行指定函数
 
 2. 
