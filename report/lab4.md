@@ -87,6 +87,10 @@ proc_run用于将指定的进程切换到CPU上运行。它的大致执行步骤
 
 * 在本实验的执行过程中，创建且运行了几个内核线程？
 
+    两个
+    * `idle` 不断查询是否有可以执行的线程，如果有则进行调度和执行。在这里将`init`线程设置为runnable就可以下班了
+    * `init` 在这里主要作用是输出hello world
+
 完成代码编写后，编译并运行代码: make qemu
 
 如果可以得到如 附录A所示的显示内容 (仅供参考, 不是标准答案输出), 则基本正确。
@@ -97,7 +101,9 @@ proc_run用于将指定的进程切换到CPU上运行。它的大致执行步骤
 
 #### Ans:
 
-该语句在 `schedule` 函数中
+该语句在 `schedule` 函数中，主要的执行流是，`local_intr_save(intr_flag)`查询是否存处于中断（通过CSR寄存器的sstatus_sie是否为1），如果处于中断，则返回1并关闭中断（将`intr_flag`设置为1，并调用`intr_disable`函数）。而`local_intr_restore`则是若`(intr_flag)`为1，则开启中断（`intr_enable`）。
+
+通过这样的先暂停中断再重启中断，可以保证两代码之间执行的代码在没有中断的情况下进行。以`proc_run`为例，为了保证`current`指针的原子性，使其仅在进程切换时被修改，需要屏蔽中断，此时可以先调用`local_intr_save`临时关闭中断，再使用`local_intr_restore`在处理完后恢复。
 
 ## 补充
 
