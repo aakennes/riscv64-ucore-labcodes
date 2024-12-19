@@ -6,6 +6,7 @@
 #include <riscv.h>
 
 static inline bool __intr_save(void) {
+    // SSTATUS_SIE：Supervisor Interrupt Enable（设置为禁用中断，因为我们不希望该线程被中断）
     if (read_csr(sstatus) & SSTATUS_SIE) {
         intr_disable();
         return 1;
