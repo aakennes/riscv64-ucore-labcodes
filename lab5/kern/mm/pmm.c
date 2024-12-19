@@ -388,7 +388,10 @@ int copy_range(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end,
              * (3) memory copy from src_kvaddr to dst_kvaddr, size is PGSIZE
              * (4) build the map of phy addr of  nage with the linear addr start
              */
-
+            void* src_kvaddr=page2kva(page);//源地址
+            void* dst_kvaddr=page2kva(npage);//目的地址
+            memcpy(dst_kvaddr,src_kvaddr,PGSIZE);//执行复制
+            ret=page_insert(to,npage,start,perm);//插入新页
 
             assert(ret == 0);
         }
