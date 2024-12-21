@@ -137,6 +137,88 @@ Copy-on-write（简称COW）的基本概念是指如果有多个使用者对一�
 请给出ucore中一个用户态进程的执行状态生命周期图（包执行状态，执行状态之间的变换关系，以及产生变换的事件或函数调用）。（字符方式画即可）
 ```
 
+## challenge 1: 实现 Copy on Write （COW）机制
+
+首先需要在do_fork对内存空间进行复制时，就将share变量设置为1.
+
+调用路径：do_fork->copy_mm->dup_mmap。只需修改dup_mmap中的share即可。
+```C
+int dup_mmap(struct mm_struct *to, struct mm_struct *from)
+{
+    assert(to != NULL && from != NULL);
+    list_entry_t *list = &(from->mmap_list), *le = list;
+    while ((le = list_prev(le)) != list)
+    {
+        struct vma_struct *vma, *nvma;
+        vma = le2vma(le, list_link);
+        nvma = vma_create(vma->vm_start, vma->vm_end, vma->vm_flags);
+        if (nvma == NULL)
+        {
+            return -E_NO_MEM;
+        }
+
+        insert_vma_struct(to, nvma);
+
+        // 注意这里的share要调整为1： 在fork时会调用dup_mmap。
+        bool share = 1;
+        if (copy_range(to->pgdir, from->pgdir, vma->vm_start, vma->vm_end, share) != 0)
+        {
+            return -E_NO_MEM;
+        }
+    }
+    return 0;
+}
+```
+
+在lab5 EX2里，需要对之前的实现进行必要的修改：根据share来判断是否需要对内存空间进行共享。
+
+```C
+if (share)
+{
+    cprintf("COW successful.\n");
+    page_insert(from, page, start, perm & (~PTE_W));
+    ret=page_insert(to, page, start, perm & (~PTE_W));
+}
+else
+{
+    // 以下为原始implementation
+    void *src_kvaddr = page2kva(page);         // 源地址
+    void *dst_kvaddr = page2kva(npage);        // 目的地址
+    memcpy(dst_kvaddr, src_kvaddr, PGSIZE);    // 执行复制
+    ret = page_insert(to, npage, start, perm); // 插入新页
+    // 以上为原始implementation
+}
+
+```
+
+对于do_pgfault，需要额外判断一次是否正在写入一个只读界面：
+```C
+if ((*ptep & PTE_V) && (error_code == 0xf))
+{
+    cprintf("COW successful.\n");
+    struct Page *page = pte2page(*ptep);
+    if (page_ref(page) == 1)
+    {
+        // 页面引用数为1
+        page_insert(mm->pgdir, page, addr, perm);
+    }
+    else
+    {
+        // 页面引用数大于1
+        struct Page *npage = alloc_page();
+        assert(npage != NULL);
+        memcpy(page2kva(npage), page2kva(page), PGSIZE);
+        if (page_insert(mm->pgdir, npage, addr, perm) != 0)
+        {
+            cprintf("page_insert in do_pgfault failed\n");
+            goto failed;
+        }
+    }
+}
+```
+
+
+
 ## 补充
 ### 系统调用部分的代码
 #### 内嵌汇编
